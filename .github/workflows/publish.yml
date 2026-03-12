@@ -1,0 +1,67 @@
+# Copyright 2026 The Mifos Initiative.
+# Licensed under the Mozilla Public License 2.0.
+#
+# CD — Publish BOM
+# ─────────────────────────────────────────────────────────────────────────────
+# Triggered on every push to main (snapshot) and on version tags (release).
+# Publishes the BOM to GitHub Packages so connectors can consume it via:
+#
+#   repositories {
+#       maven {
+#           url = uri('https://maven.pkg.github.com/openMF/mifos-platform-bom')
+#           credentials {
+#               username = System.getenv('GITHUB_ACTOR')
+#               password = System.getenv('GITHUB_TOKEN')
+#           }
+#       }
+#   }
+#
+# The GITHUB_TOKEN secret is automatically provided by GitHub Actions.
+
+name: Publish BOM
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Verify BOM before publishing
+        run: ./gradlew :bom-verification:verifyBom --no-daemon
+
+      - name: Publish BOM to GitHub Packages
+        run: ./gradlew publishMavenBomPublicationToGitHubPackagesRepository --no-daemon
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

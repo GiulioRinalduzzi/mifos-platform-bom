@@ -1,0 +1,48 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate configuration for mifos-platform-bom. Renovate opens PRs to bump versions in gradle.properties. Each bump triggers the Verify BOM CI workflow, which resolves all dependencies and runs the javax.* purity check before the PR is merged.",
+  "extends": [
+    "config:base"
+  ],
+  "schedule": ["every weekend"],
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group Spring Boot upgrades — Spring Boot BOM governs ~100 transitive dependencies, so bumps must be reviewed together.",
+      "matchPackageNames": ["org.springframework.boot:spring-boot-dependencies"],
+      "groupName": "Spring Boot BOM",
+      "automerge": false
+    },
+    {
+      "description": "Group Apache Camel upgrades — Camel BOM governs all camel-* modules.",
+      "matchPackageNames": ["org.apache.camel.springboot:camel-spring-boot-bom"],
+      "groupName": "Apache Camel BOM",
+      "automerge": false
+    },
+    {
+      "description": "Group Zeebe / Camunda upgrades — zeebe-client-java and spring-zeebe-starter must stay in sync.",
+      "matchPackagePrefixes": ["io.camunda:"],
+      "groupName": "Zeebe / Camunda",
+      "automerge": false
+    },
+    {
+      "description": "Group Jakarta EE API upgrades — all jakarta.* APIs must remain compatible with Spring Boot's managed versions.",
+      "matchPackagePrefixes": ["jakarta."],
+      "groupName": "Jakarta EE APIs",
+      "automerge": false
+    },
+    {
+      "description": "Automerge patch-level updates for testing libraries (JUnit, Mockito).",
+      "matchPackagePrefixes": ["org.junit.jupiter:", "org.mockito:"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "description": "Automerge patch-level Apache Commons updates.",
+      "matchPackagePrefixes": ["org.apache.commons:", "commons-codec:", "commons-io:"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    }
+  ]
+}

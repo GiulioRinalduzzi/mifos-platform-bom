@@ -1,0 +1,199 @@
+/*
+ * Copyright 2026 The Mifos Initiative.
+ * Licensed under the Mozilla Public License 2.0.
+ */
+
+plugins {
+    id 'java-platform'
+    id 'maven-publish'
+}
+
+group = 'org.mifos.platform'
+version = '1.0.0-SNAPSHOT'
+description = 'Bill of Materials for the Mifos Payment Hub connector ecosystem. ' +
+        'Governs Jakarta EE 10, Spring Boot 3.4, Apache Camel 4, and Zeebe 8 across all PH-EE connectors.'
+
+// allowDependencies() is required to import other BOMs (Spring Boot BOM, Camel BOM)
+// via 'api platform(...)'. Without it, the java-platform plugin forbids dependencies.
+javaPlatform {
+    allowDependencies()
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    // Camunda / Zeebe artifacts are not on Maven Central
+    maven { url = uri('https://artifacts.camunda.com/artifactory/zeebe-io/') }
+    maven { url = uri('https://artifacts.camunda.com/artifactory/zeebe-io-snapshots/') }
+}
+
+dependencies {
+    // ── Imported BOMs ─────────────────────────────────────────────────────────
+    // Using 'api platform(...)' re-exports these BOMs to every connector that
+    // imports the Mifos Platform BOM. Connectors do NOT need to import Spring
+    // Boot BOM or Camel BOM separately — they get everything from this one import.
+    api platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
+    api platform("org.apache.camel.springboot:camel-spring-boot-bom:${camelVersion}")
+
+    constraints {
+        // ── Zeebe / Camunda ───────────────────────────────────────────────────
+        // Not included in Spring Boot or Camel BOMs.
+        api "io.camunda:spring-zeebe-starter:${zeebeVersion}"
+        api "io.camunda:zeebe-client-java:${zeebeVersion}"
+        api "io.camunda:zeebe-bpmn-model:${zeebeVersion}"
+
+        // ── Jakarta EE 10 ─────────────────────────────────────────────────────
+        // Explicit constraints are the enforcedPlatform defense line: they prevent
+        // third-party libraries that still declare transitive javax.* dependencies
+        // from overriding the jakarta.* versions on the connector classpath.
+        api "jakarta.validation:jakarta.validation-api:${jakartaValidationVersion}"
+        api "jakarta.servlet:jakarta.servlet-api:${jakartaServletVersion}"
+        api "jakarta.annotation:jakarta.annotation-api:${jakartaAnnotationVersion}"
+        api "jakarta.persistence:jakarta.persistence-api:${jakartaPersistenceVersion}"
+        api "jakarta.xml.bind:jakarta.xml.bind-api:${jakartaXmlBindVersion}"
+        api "jakarta.ws.rs:jakarta.ws.rs-api:${jakartaWsRsVersion}"
+
+        // ── Hibernate Validator ───────────────────────────────────────────────
+        // 8.x is the jakarta.validation 3.x implementation.
+        // Replaces hibernate-validator 6.x used in ph-ee-connector-common,
+        // which implements the legacy javax.validation API.
+        api "org.hibernate.validator:hibernate-validator:${hibernateValidatorVersion}"
+
+        // ── JAXB runtime ──────────────────────────────────────────────────────
+        // Required by connectors that process XML payloads (e.g., mccbs for
+        // Mastercard Cross-Border Services XML messages).
+        api "org.glassfish.jaxb:jaxb-runtime:${jaxbRuntimeVersion}"
+
+        // ── Jackson ───────────────────────────────────────────────────────────
+        // Spring Boot BOM manages core Jackson, but explicit constraints here
+        // cover format and datatype modules that connectors declare independently.
+        api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+        api "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+        api "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+        api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
+        api "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
+
+        // ── Apache CXF ────────────────────────────────────────────────────────
+        // CXF 3.x uses javax.*; CXF 4.x uses jakarta.*.
+        // Required by ph-ee-connector-ams-mifos which uses CXF for its
+        // Fineract SOAP/REST integration via Apache Camel's camel-cxf component.
+        api "org.apache.cxf:cxf-core:${cxfVersion}"
+        api "org.apache.cxf:cxf-rt-rs-client:${cxfVersion}"
+        api "org.apache.cxf:cxf-rt-frontend-jaxrs:${cxfVersion}"
+        api "org.apache.cxf:cxf-rt-transports-http:${cxfVersion}"
+
+        // ── SpringDoc OpenAPI ─────────────────────────────────────────────────
+        // Replaces the deprecated Springfox / springfox-swagger-ui libraries.
+        // springfox 3.x is incompatible with Spring Boot 3; springdoc 2.x is.
+        api "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+        api "org.springdoc:springdoc-openapi-starter-webflux-ui:${springdocVersion}"
+
+        // ── Flyway ────────────────────────────────────────────────────────────
+        // Flyway 10.x supports Java 21, Flyway 9.x and below do not.
+        // Required by ph-ee-operations-app for schema migrations.
+        api "org.flywaydb:flyway-core:${flywayVersion}"
+        api "org.flywaydb:flyway-mysql:${flywayVersion}"
+
+        // ── Security & JWT ────────────────────────────────────────────────────
+        api "com.auth0:java-jwt:${javaJwtVersion}"
+        api "com.nimbusds:nimbus-jose-jwt:${nimbusJoseJwtVersion}"
+
+        // ── Apache Commons ────────────────────────────────────────────────────
+        api "org.apache.commons:commons-lang3:${commonsLang3Version}"
+        api "commons-codec:commons-codec:${commonsCodecVersion}"
+        api "commons-io:commons-io:${commonsIoVersion}"
+
+        // ── Database ──────────────────────────────────────────────────────────
+        // Spring Boot BOM manages mysql-connector-j, but explicit constraint
+        // ensures the jakarta.transaction-compatible driver version is used.
+        api "com.mysql:mysql-connector-j:${mysqlVersion}"
+
+        // ── Cloud storage (ph-ee-operations-app) ──────────────────────────────
+        api "com.azure:azure-storage-blob:${azureStorageBlobVersion}"
+
+        // ── Lombok ────────────────────────────────────────────────────────────
+        api "org.projectlombok:lombok:${lombokVersion}"
+
+        // ── Mastercard connector ──────────────────────────────────────────────
+        api "com.mastercard.developer:oauth1-signer:${mastercardOauth1Version}"
+
+        // ── JSON ──────────────────────────────────────────────────────────────
+        api "org.json:json:${orgJsonVersion}"
+
+        // ── Testing ───────────────────────────────────────────────────────────
+        // Spring Boot BOM manages JUnit and Mockito, but explicit constraints
+        // guard against connectors that declare test deps outside the BOM scope.
+        api "org.junit.jupiter:junit-jupiter:${junitJupiterVersion}"
+        api "org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}"
+        api "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
+        api "org.mockito:mockito-core:${mockitoVersion}"
+        api "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
+    }
+}
+
+publishing {
+    publications {
+        mavenBom(MavenPublication) {
+            from components.javaPlatform
+
+            pom {
+                name = 'Mifos Platform BOM'
+                description = project.description
+                url = 'https://github.com/openMF/mifos-platform-bom'
+
+                licenses {
+                    license {
+                        name = 'Mozilla Public License 2.0'
+                        url = 'https://www.mozilla.org/en-US/MPL/2.0/'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'giuliorinalduzzi'
+                        name = 'Giulio Rinalduzzi'
+                        email = 'giuliorinalduzzi@gmail.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/openMF/mifos-platform-bom.git'
+                    developerConnection = 'scm:git:ssh://github.com/openMF/mifos-platform-bom.git'
+                    url = 'https://github.com/openMF/mifos-platform-bom'
+                }
+            }
+        }
+    }
+
+    repositories {
+        // Maven Local — used during development and CI bootstrap.
+        // Connectors can consume snapshot BOM versions via mavenLocal().
+        maven {
+            name = 'mavenLocal'
+            url = uri(System.getProperty('user.home') + '/.m2/repository')
+        }
+
+        // GitHub Packages — primary distribution channel.
+        // Set GITHUB_ACTOR and GITHUB_TOKEN in the environment or gradle.properties.
+        maven {
+            name = 'GitHubPackages'
+            url = uri('https://maven.pkg.github.com/openMF/mifos-platform-bom')
+            credentials {
+                username = findProperty('gpr.user') ?: System.getenv('GITHUB_ACTOR')
+                password = findProperty('gpr.key') ?: System.getenv('GITHUB_TOKEN')
+            }
+        }
+
+        // Mifos JFrog Artifactory — alternative for connectors already using
+        // the fyn-libs-snapshot repository (e.g., ph-ee-connector-common).
+        // Uncomment and configure credentials when publishing to Artifactory.
+        // maven {
+        //     name = 'MifosArtifactory'
+        //     url = uri('https://mifos.jfrog.io/artifactory/phee-gradle-local')
+        //     credentials {
+        //         username = findProperty('artifactory.user') ?: System.getenv('ARTIFACTORY_USER')
+        //         password = findProperty('artifactory.key') ?: System.getenv('ARTIFACTORY_KEY')
+        //     }
+        // }
+    }
+}

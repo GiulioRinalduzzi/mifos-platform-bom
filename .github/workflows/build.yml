@@ -1,0 +1,51 @@
+# Copyright 2026 The Mifos Initiative.
+# Licensed under the Mozilla Public License 2.0.
+#
+# CI — Verify BOM
+# ─────────────────────────────────────────────────────────────────────────────
+# Triggered on every push and pull request to the main branch.
+# Resolves all BOM-managed dependencies from real Maven repositories and runs
+# the classpath purity check (no javax.* leaks). Fails fast before the BOM
+# is published to GitHub Packages.
+
+name: Verify BOM
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: Resolve & Verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Verify BOM (resolve all dependencies + javax.* purity check)
+        run: ./gradlew :bom-verification:verifyBom --no-daemon --stacktrace
+
+      - name: Full build (compile + test)
+        run: ./gradlew build --no-daemon
