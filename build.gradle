@@ -34,6 +34,10 @@ dependencies {
     // Boot BOM or Camel BOM separately — they get everything from this one import.
     api platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
     api platform("org.apache.camel.springboot:camel-spring-boot-bom:${camelVersion}")
+    // AWS SDK v2 BOM governs all software.amazon.awssdk:* modules.
+    // Required by ph-ee-operations-app (migrating from SDK v1 com.amazonaws:1.11.x).
+    // SDK v2 is on Maven Central; no extra repository needed.
+    api platform("software.amazon.awssdk:bom:${awsSdkVersion}")
 
     constraints {
         // ── Zeebe / Camunda ───────────────────────────────────────────────────
@@ -103,6 +107,16 @@ dependencies {
         api "commons-codec:commons-codec:${commonsCodecVersion}"
         api "commons-io:commons-io:${commonsIoVersion}"
 
+        // ── JPA Providers ─────────────────────────────────────────────────────
+        // EclipseLink 4.x implements Jakarta Persistence 3.0 (jakarta.persistence.*).
+        // EclipseLink 2.7.x implements javax.persistence and is incompatible with
+        // Spring Boot 3. Required by ph-ee-operations-app, ph-ee-importer-rdbms,
+        // and ph-ee-identity-account-mapper, which all use EclipseLink as the JPA
+        // provider instead of Hibernate.
+        // NOTE: connectors that use Hibernate (the Spring Boot default) do not need
+        // to declare this — they inherit Hibernate 6 from the Spring Boot BOM above.
+        api "org.eclipse.persistence:eclipselink:${eclipselinkVersion}"
+
         // ── Database ──────────────────────────────────────────────────────────
         // Spring Boot BOM manages mysql-connector-j, but explicit constraint
         // ensures the jakarta.transaction-compatible driver version is used.
@@ -119,6 +133,10 @@ dependencies {
 
         // ── JSON ──────────────────────────────────────────────────────────────
         api "org.json:json:${orgJsonVersion}"
+        // Gson is used by at least five PH-EE components (connector-bulk,
+        // connector-mojaloop-java, connector-channel, connector-gsma-mm,
+        // notifications) and is not managed by the Spring Boot BOM.
+        api "com.google.code.gson:gson:${gsonVersion}"
 
         // ── Testing ───────────────────────────────────────────────────────────
         // Spring Boot BOM manages JUnit and Mockito, but explicit constraints

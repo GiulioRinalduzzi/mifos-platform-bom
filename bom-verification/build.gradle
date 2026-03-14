@@ -86,6 +86,12 @@ dependencies {
     implementation 'commons-codec:commons-codec'
     implementation 'commons-io:commons-io'
 
+    // EclipseLink (JPA provider — alternative to Hibernate, used in three components)
+    implementation 'org.eclipse.persistence:eclipselink'
+
+    // AWS SDK v2 (ph-ee-operations-app S3 integration)
+    implementation 'software.amazon.awssdk:s3'
+
     // Database
     runtimeOnly 'com.mysql:mysql-connector-j'
 
@@ -98,6 +104,7 @@ dependencies {
 
     // JSON
     implementation 'org.json:json'
+    implementation 'com.google.code.gson:gson'
 
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter'
