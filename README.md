@@ -2,11 +2,11 @@
 
 > Bill of Materials for the Mifos Payment Hub EE (PH-EE) connector ecosystem.
 
-A single Gradle `java-platform` project that pins every shared dependency version used across the PH-EE connector suite. Connectors import this BOM once and get consistent, Jakarta EE 10-compatible versions of Spring Boot 3.4, Apache Camel 4, Zeebe/Camunda 8, and 30+ supporting libraries — with no version declarations of their own.
+A single Gradle `java-platform` project that pins every shared dependency version used across the PH-EE Java stack. All Java components — connectors, operations-app, importers, exporters, and supporting services — import this BOM once and get consistent, Jakarta EE 10-compatible versions of Spring Boot 3.4, Apache Camel 4, Zeebe/Camunda 8, and 30+ supporting libraries, with no version declarations of their own.
 
 ## Why a BOM?
 
-The Payment Hub connector ecosystem currently has **42+ connector repositories**, each declaring its own dependency versions independently. This leads to:
+The Payment Hub EE ecosystem has approximately **42 repositories in total** (roughly 28 Java components spanning connectors, operations-app, importer-rdbms, importer-es, exporter, identity-account-mapper, and supporting services — plus TypeScript, Python, and JavaScript repos). Each Java component currently declares its own dependency versions independently. This leads to:
 
 - Version drift between connectors (e.g., Spring Boot 3.1 in one repo, 3.2 in another)
 - `javax.*` vs `jakarta.*` classpath conflicts from incompatible transitive dependencies
