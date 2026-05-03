@@ -46,7 +46,13 @@ dependencies {
     implementation 'org.apache.camel.springboot:camel-bean-validator-starter'
 
     // Zeebe
-    implementation 'io.camunda:spring-zeebe-starter'
+    // Exclude Camunda identity SNAPSHOT transitive deps — they require authenticated
+    // access to artifacts.camunda.com/zeebe-io-snapshots which is not publicly available.
+    // The BOM still pins the zeebe version; we verify zeebe-client-java resolves correctly.
+    implementation('io.camunda:spring-zeebe-starter') {
+        exclude group: 'io.camunda', module: 'identity-spring-boot-starter'
+        exclude group: 'io.camunda', module: 'identity-sdk'
+    }
     implementation 'io.camunda:zeebe-client-java'
 
     // Jakarta EE 10
