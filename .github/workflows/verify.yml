@@ -22,7 +22,7 @@ jobs:
           java-version: 21
           cache: gradle
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Run verifyBom
         run: ./gradlew :bom-verification:verifyBom --no-daemon --stacktrace
