@@ -1,0 +1,53 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify BOM
+        run: ./gradlew :bom-verification:verifyBom --no-daemon
+
+      - name: Check version matches tag and is not SNAPSHOT
+        run: |
+          tag_version="${{ github.ref_name }}"
+          tag_version="${tag_version#v}"
+          version=$(grep -E 'version\s*=\s*' build.gradle | head -1 | sed "s/.*version\s*=\s*['\"]//;s/['\"].*//")
+          echo "Tag version: $tag_version"
+          echo "Build version: $version"
+          if [[ "$version" == *-SNAPSHOT ]]; then
+            echo "ERROR: build.gradle version is a SNAPSHOT ($version) — use the snapshot workflow or remove -SNAPSHOT before tagging."
+            exit 1
+          fi
+          if [[ "$version" != "$tag_version" ]]; then
+            echo "ERROR: build.gradle version ($version) does not match tag ($tag_version) — update build.gradle before pushing the tag."
+            exit 1
+          fi
+
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew publishMavenBomPublicationToGitHubPackagesRepository --no-daemon
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
