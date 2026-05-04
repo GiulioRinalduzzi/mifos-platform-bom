@@ -26,7 +26,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Run verifyBom
-        run: ./gradlew :bom-verification:verifyBom --no-daemon --stacktrace
+        run: ./gradlew :bom-verification:verifyBom --stacktrace
 
       - name: Full build (compile + test)
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build

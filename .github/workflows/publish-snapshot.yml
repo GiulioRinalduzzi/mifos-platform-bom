@@ -28,7 +28,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Verify BOM
-        run: ./gradlew :bom-verification:verifyBom --no-daemon
+        run: ./gradlew :bom-verification:verifyBom
 
       - name: Check version is SNAPSHOT
         run: |
@@ -46,4 +46,4 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew publishMavenBomPublicationToGitHubPackagesRepository --no-daemon
+        run: ./gradlew publishMavenBomPublicationToGitHubPackagesRepository
