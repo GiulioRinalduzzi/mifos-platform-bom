@@ -23,7 +23,20 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Diagnose arg passing
+        run: |
+          echo "---- env ----"
+          env | grep -iE 'gradle|develocity|java' | sort
+          echo "---- argv echo via printf ----"
+          printf '<%s>\n' :bom-verification:verifyBom --stacktrace
+          echo "---- gradle tasks list ----"
+          ./gradlew :bom-verification:tasks --all 2>&1 | grep -iE 'verify|bom' || true
+          echo "---- direct invoke without --stacktrace ----"
+          ./gradlew :bom-verification:verifyBom || echo "EXIT=$?"
+          echo "---- direct invoke with -S long form ----"
+          ./gradlew :bom-verification:verifyBom -S || echo "EXIT=$?"
 
       - name: Run verifyBom
         run: ./gradlew :bom-verification:verifyBom --stacktrace
