@@ -195,7 +195,7 @@ publishing {
         // Set GITHUB_ACTOR and GITHUB_TOKEN in the environment or gradle.properties.
         maven {
             name = 'GitHubPackages'
-            url = uri('https://maven.pkg.github.com/openMF/mifos-platform-bom')
+            url = uri("https://maven.pkg.github.com/${System.getenv('GITHUB_REPOSITORY') ?: 'openMF/mifos-platform-bom'}")
             credentials {
                 username = findProperty('gpr.user') ?: System.getenv('GITHUB_ACTOR')
                 password = findProperty('gpr.key') ?: System.getenv('GITHUB_TOKEN')
