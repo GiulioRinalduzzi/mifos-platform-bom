@@ -33,6 +33,10 @@ dependencies {
     // imports the Mifos Platform BOM. Connectors do NOT need to import Spring
     // Boot BOM or Camel BOM separately — they get everything from this one import.
     api platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
+    // camel-bom pins the plain org.apache.camel:* modules (camel-core, camel-cxf, etc.)
+    // used directly by libraries like ph-ee-connector-common that do not depend on the
+    // Spring Boot starters. camel-spring-boot-bom only governs camel-*-starter modules.
+    api platform("org.apache.camel:camel-bom:${camelVersion}")
     api platform("org.apache.camel.springboot:camel-spring-boot-bom:${camelVersion}")
     // AWS SDK v2 BOM governs all software.amazon.awssdk:* modules.
     // Required by ph-ee-operations-app (migrating from SDK v1 com.amazonaws:1.11.x).
